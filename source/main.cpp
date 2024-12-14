@@ -100,6 +100,8 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
     }
 
     // int dispWidth = al::getLayoutDisplayWidth();
+    Client* client = Client::instance();
+    SocketClient* socket = client->mSocket;
     int dispHeight = al::getLayoutDisplayHeight();
 
     gTextWriter->mViewport = viewport;
@@ -119,14 +121,15 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
     sead::Heap* clientHeap = Client::getClientHeap();
     sead::Heap *gmHeap = GameModeManager::instance()->getHeap();
 
+    gTextWriter->printf("The Official Celestia \"Luwuna\" Vonluna Build\n");
+    gTextWriter->printf("Server: %s:%d\n", socket->getIP(), socket->getPort());
+    gTextWriter->printf("Connected Players: %d/%d\n", Client::getConnectCount() + 1, Client::getMaxPlayerCount());
+    gTextWriter->printf("Client Socket Connection Status: %s\n", Client::instance()->mSocket->getStateChar());
     if (clientHeap) {
         gTextWriter->printf("Client Heap Free Size: %f/%f\n", clientHeap->getFreeSize() * 0.001f, clientHeap->getSize() * 0.001f);
         gTextWriter->printf("Gamemode Heap Free Size: %f/%f\n", gmHeap->getFreeSize() * 0.001f, gmHeap->getSize()* 0.001f);
     }
-
-    gTextWriter->printf("Client Socket Connection Status: %s\n", Client::instance()->mSocket->getStateChar());
-    //gTextWriter->printf("nn::socket::GetLastErrno: 0x%x\n", Client::instance()->mSocket->socket_errno);
-    gTextWriter->printf("Connected Players: %d/%d\n", Client::getConnectCount() + 1, Client::getMaxPlayerCount());
+    gTextWriter->printf("nn::socket::GetLastErrno: 0x%x\n", Client::instance()->mSocket->socket_errno);
     
     gTextWriter->printf("Send Queue Count: %d/%d\n", Client::instance()->mSocket->getSendCount(), Client::instance()->mSocket->getSendMaxCount());
     gTextWriter->printf("Recv Queue Count: %d/%d\n", Client::instance()->mSocket->getRecvCount(), Client::instance()->mSocket->getRecvMaxCount());
@@ -164,7 +167,7 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
         {
         case 0:
             {
-                // PuppetActor *curPuppet = Client::getDebugPuppet();
+                //PuppetActor *curPuppet = Client::getDebugPuppet();
 
                 if(curPuppet) {
 
@@ -173,7 +176,6 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
                     PuppetInfo* curPupInfo = curPuppet->getInfo();
 
                     if (curModel && curPupInfo) {
-                        // al::LiveActor *curCapture = curPuppet->getCapture(debugCaptureIndex);
 
                         gTextWriter->printf("Puppet Index: %d\n", debugPuppetIndex);
                         gTextWriter->printf("Player Name: %s\n", curPupInfo->puppetName);
@@ -185,10 +187,6 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
                         gTextWriter->printf("Puppet Costume: H: %s B: %s\n", curPupInfo->costumeHead, curPupInfo->costumeBody);
                         gTextWriter->printf("Puppet Team/Freeze State: %s/%s\n", BTOC(curPupInfo->isFreezeTagRunner), BTOC(curPupInfo->isFreezeTagFreeze));
                         //gTextWriter->printf("Packet Coords:\nX: %f\nY: %f\nZ: %f\n", curPupInfo->playerPos.x, curPupInfo->playerPos.y, curPupInfo->playerPos.z);
-                        // if (curModel) {
-                        //     sead::Vector3f* pupPos = al::getTrans(curModel);
-                        //     gTextWriter->printf("In-Game Coords:\nX: %f\nY: %f\nZ: %f\n", pupPos->x, pupPos->y, pupPos->z);
-                        // }
 
                         if(curPupInfo->isCaptured) {
                             gTextWriter->printf("Current Capture: %s\n", curPupInfo->curHack);

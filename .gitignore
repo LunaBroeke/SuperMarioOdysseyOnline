@@ -9,3 +9,15 @@ Custom Stage Builds/**
 *.disabled
 
 compile_commands.json
+/x64/Debug
+*.vsidx
+*.log
+/source/x64/Debug
+/source/.vs
+/.vs
+*.sln
+*.filters
+*.vcxproj
+*.user
+*.code-workspace
+*.lnk
