@@ -31,6 +31,7 @@
 #include "layouts/HideAndSeekIcon.h"
 #include "logger.hpp"
 #include "rs/util.hpp"
+#include "server/freeze/FreezeTagMode.hpp"
 #include "server/gamemode/GameModeBase.hpp"
 #include "server/hns/HideAndSeekMode.hpp"
 #include "server/gamemode/GameModeManager.hpp"
@@ -85,7 +86,13 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
     //     Application::sInstance->mFramework->mGpuPerf->drawResult((agl::DrawContext *)drawContext, frameBuffer);
     // }
 
-    Time::calcTime();  // this needs to be ran every frame, so running it here works
+    // Freeze tag needs the delta time to not update while the game is paused, so if in Freeze Tag mode, override functionality
+    if(GameModeManager::instance()->isMode(GameMode::FREEZETAG)) {
+        if(!GameModeManager::instance()->isPaused())
+            Time::calcTime();
+    } else {
+        Time::calcTime();  // this needs to be ran every frame, so running it here works
+    }
 
     if(!debugMode) {
         al::executeDraw(curSequence->mLytKit, "２Ｄバック（メイン画面）");
@@ -93,6 +100,8 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
     }
 
     // int dispWidth = al::getLayoutDisplayWidth();
+    Client* client = Client::instance();
+    SocketClient* socket = client->mSocket;
     int dispHeight = al::getLayoutDisplayHeight();
 
     gTextWriter->mViewport = viewport;
@@ -112,18 +121,24 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
     sead::Heap* clientHeap = Client::getClientHeap();
     sead::Heap *gmHeap = GameModeManager::instance()->getHeap();
 
+    gTextWriter->printf("The Official Celestia \"Luwuna\" Vonluna Build\n");
+    gTextWriter->printf("Server: %s:%d\n", socket->getIP(), socket->getPort());
+    gTextWriter->printf("Connected Players: %d/%d\n", Client::getConnectCount() + 1, Client::getMaxPlayerCount());
+    gTextWriter->printf("Client Socket Connection Status: %s\n", Client::instance()->mSocket->getStateChar());
     if (clientHeap) {
         gTextWriter->printf("Client Heap Free Size: %f/%f\n", clientHeap->getFreeSize() * 0.001f, clientHeap->getSize() * 0.001f);
         gTextWriter->printf("Gamemode Heap Free Size: %f/%f\n", gmHeap->getFreeSize() * 0.001f, gmHeap->getSize()* 0.001f);
     }
-
-    gTextWriter->printf("Client Socket Connection Status: %s\n", Client::instance()->mSocket->getStateChar());
-	gTextWriter->printf("Udp socket status: %s\n", Client::instance()->mSocket->getUdpStateChar());
-    //gTextWriter->printf("nn::socket::GetLastErrno: 0x%x\n", Client::instance()->mSocket->socket_errno);
-    gTextWriter->printf("Connected Players: %d/%d\n", Client::getConnectCount() + 1, Client::getMaxPlayerCount());
+    gTextWriter->printf("nn::socket::GetLastErrno: 0x%x\n", Client::instance()->mSocket->socket_errno);
     
     gTextWriter->printf("Send Queue Count: %d/%d\n", Client::instance()->mSocket->getSendCount(), Client::instance()->mSocket->getSendMaxCount());
     gTextWriter->printf("Recv Queue Count: %d/%d\n", Client::instance()->mSocket->getRecvCount(), Client::instance()->mSocket->getRecvMaxCount());
+    
+    if(GameModeManager::instance()->isModeAndActive(GameMode::FREEZETAG)) {
+        FreezeTagInfo* inf = GameModeManager::instance()->getInfo<FreezeTagInfo>();
+        gTextWriter->printf("Is Runner: %s\n", BTOC(inf->mIsPlayerRunner));
+        gTextWriter->printf("Is Freeze: %s\n", BTOC(inf->mIsPlayerFreeze));
+    }
 
     al::Scene *curScene = curSequence->curScene;
 
@@ -152,7 +167,7 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
         {
         case 0:
             {
-                // PuppetActor *curPuppet = Client::getDebugPuppet();
+                //PuppetActor *curPuppet = Client::getDebugPuppet();
 
                 if(curPuppet) {
 
@@ -161,7 +176,6 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
                     PuppetInfo* curPupInfo = curPuppet->getInfo();
 
                     if (curModel && curPupInfo) {
-                        // al::LiveActor *curCapture = curPuppet->getCapture(debugCaptureIndex);
 
                         gTextWriter->printf("Puppet Index: %d\n", debugPuppetIndex);
                         gTextWriter->printf("Player Name: %s\n", curPupInfo->puppetName);
@@ -171,11 +185,8 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
                         gTextWriter->printf("Puppet Stage: %s\n", curPupInfo->stageName);
                         gTextWriter->printf("Puppet Scenario: %u\n", curPupInfo->scenarioNo);
                         gTextWriter->printf("Puppet Costume: H: %s B: %s\n", curPupInfo->costumeHead, curPupInfo->costumeBody);
+                        gTextWriter->printf("Puppet Team/Freeze State: %s/%s\n", BTOC(curPupInfo->isFreezeTagRunner), BTOC(curPupInfo->isFreezeTagFreeze));
                         //gTextWriter->printf("Packet Coords:\nX: %f\nY: %f\nZ: %f\n", curPupInfo->playerPos.x, curPupInfo->playerPos.y, curPupInfo->playerPos.z);
-                        // if (curModel) {
-                        //     sead::Vector3f* pupPos = al::getTrans(curModel);
-                        //     gTextWriter->printf("In-Game Coords:\nX: %f\nY: %f\nZ: %f\n", pupPos->x, pupPos->y, pupPos->z);
-                        // }
 
                         if(curPupInfo->isCaptured) {
                             gTextWriter->printf("Current Capture: %s\n", curPupInfo->curHack);
@@ -431,6 +442,9 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
             al::stopAllBgm(stageScene, 0);
         }
     }
+
+    if(isFirstStep && GameModeManager::instance()->isMode(GameMode::FREEZETAG))
+        GameModeManager::instance()->getMode<FreezeTagMode>()->setWipeHolder(sequence->mWipeHolder);
 
     return isFirstStep;
 
