@@ -122,6 +122,7 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
     sead::Heap *gmHeap = GameModeManager::instance()->getHeap();
 
     gTextWriter->printf("The Official Celestia \"Luwuna\" Vonluna Build\n");
+    gTextWriter->printf("github.lunabroeke.dev");
     gTextWriter->printf("Server: %s:%d\n", socket->getIP(), socket->getPort());
     gTextWriter->printf("Connected Players: %d/%d\n", Client::getConnectCount() + 1, Client::getMaxPlayerCount());
     gTextWriter->printf("Client Socket Connection Status: %s\n", Client::instance()->mSocket->getStateChar());
@@ -187,7 +188,6 @@ void drawMainHook(HakoniwaSequence *curSequence, sead::Viewport *viewport, sead:
                         gTextWriter->printf("Puppet Costume: H: %s B: %s\n", curPupInfo->costumeHead, curPupInfo->costumeBody);
                         gTextWriter->printf("Puppet Team/Freeze State: %s/%s\n", BTOC(curPupInfo->isFreezeTagRunner), BTOC(curPupInfo->isFreezeTagFreeze));
                         //gTextWriter->printf("Packet Coords:\nX: %f\nY: %f\nZ: %f\n", curPupInfo->playerPos.x, curPupInfo->playerPos.y, curPupInfo->playerPos.z);
-
                         if(curPupInfo->isCaptured) {
                             gTextWriter->printf("Current Capture: %s\n", curPupInfo->curHack);
                             gTextWriter->printf("Current Packet Animation: %s\n", curPupInfo->curAnimStr);
